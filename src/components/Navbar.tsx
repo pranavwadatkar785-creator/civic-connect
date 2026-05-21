@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Landmark, Menu, PlusCircle, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavbarProps {
   activeTab?: string;
@@ -23,6 +24,7 @@ export default function Navbar({
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,7 +99,36 @@ export default function Navbar({
   })}
 </div>
 
-        <div className="hidden items-center md:flex">
+        <div className="hidden items-center gap-3 md:flex">
+          {isAuthenticated ? (
+            <>
+              <span className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-[#2563EB]">
+                {user?.userId}
+              </span>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-[#2563EB] shadow-sm transition-all duration-200 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+              >
+                Signup
+              </Link>
+            </>
+          )}
+
           <button
             type="button"
             onClick={handleReportClick}
@@ -170,6 +201,39 @@ export default function Navbar({
               <PlusCircle className="h-4 w-4" aria-hidden="true" />
               Report Issue
             </button>
+
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {isAuthenticated ? (
+                <>
+                  <span className="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-[#2563EB]">
+                    {user?.userId}
+                  </span>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-[#2563EB] shadow-sm transition-all duration-200 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2"
+                  >
+                    Signup
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
