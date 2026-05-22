@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { ImagePlus, LocateFixed, Loader2, Send, X } from "lucide-react";
+import { createIssue } from "@/services/issues";
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
   const [roadName, setRoadName] = useState("");
   const [nearbyLandmark, setNearbyLandmark] = useState("");
   const [extraDirections, setExtraDirections] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   useEffect(() => {
@@ -42,168 +46,193 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
   }, [isOpen]);
   
   const getCurrentLocation = () => {
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported on this device");
-    return;
-  }
-
-  setLocation("Fetching current location...");
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
-          {
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        console.log("GPS:", lat, lon);
-        console.log("Address:", data);
-
-        const a = data.address || {};
-
-        const locationText = [
-          a.road,
-          a.suburb || a.neighbourhood,
-          a.city || a.town || a.village,
-          a.state,
-        ]
-          .filter(Boolean)
-          .join(", ");
-
-        setLocation(
-          locationText || data.display_name || "Location unavailable"
-        );
-      } catch (err) {
-        console.error("Location fetch failed:", err);
-        setLocation("Could not fetch address");
-      }
-    },
-    (error) => {
-      console.error("GPS error:", error);
-
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          setLocation("Location permission denied");
-          break;
-
-        case error.TIMEOUT:
-          setLocation("Location request timed out");
-          break;
-
-        default:
-          setLocation("Unable to determine location");
-      }
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 20000,
-      maximumAge: 0,
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported on this device");
+      return;
     }
-  );
-};
 
-  const handleUseCurrentGPS = () => {
-  if (!navigator.geolocation) {
-    setCurrentLocation("GPS location is not supported on this device.");
-    return;
-  }
+    setLocation("Fetching current location...");
 
-  setIsFetchingLocation(true);
-  setCurrentLocation("Fetching current location...");
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      try {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
 
-        console.log("Lat:", lat);
-        console.log("Lon:", lon);
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
+            {
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
 
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
-        );
+          const data = await response.json();
 
-        const data = await response.json();
+          console.log("GPS:", lat, lon);
+          console.log("Address:", data);
 
-        console.log(data);
+          const a = data.address || {};
 
-        const a = data.address || {};
+          const locationText = [
+            a.road,
+            a.suburb || a.neighbourhood,
+            a.city || a.town || a.village,
+            a.state,
+          ]
+            .filter(Boolean)
+            .join(", ");
 
-        const locationText = [
-          a.road,
-          a.suburb || a.neighbourhood,
-          a.city || a.town || a.village,
-          a.state,
-        ]
-          .filter(Boolean)
-          .join(", ");
+          setLocation(
+            locationText || data.display_name || "Location unavailable"
+          );
+        } catch (err) {
+          console.error("Location fetch failed:", err);
+          setLocation("Could not fetch address");
+        }
+      },
+      (error) => {
+        console.error("GPS error:", error);
 
-        setCurrentLocation(
-          locationText ||
-          data.display_name ||
-          "Location unavailable"
-        );
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocation("Location permission denied");
+            break;
 
-      } catch (error) {
-        console.error(error);
-        setCurrentLocation("Could not fetch address.");
+          case error.TIMEOUT:
+            setLocation("Location request timed out");
+            break;
+
+          default:
+            setLocation("Unable to determine location");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
       }
+    );
+  };
 
-      setIsFetchingLocation(false);
-    },
-
-    (error) => {
-      console.error(error);
-
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          setCurrentLocation("Location permission denied.");
-          break;
-
-        case error.TIMEOUT:
-          setCurrentLocation("Location request timed out.");
-          break;
-
-        default:
-          setCurrentLocation("Unable to fetch location.");
-      }
-
-      setIsFetchingLocation(false);
-    },
-
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0,
+  const handleUseCurrentGPS = () => {
+    if (!navigator.geolocation) {
+      setCurrentLocation("GPS location is not supported on this device.");
+      return;
     }
-  );
-};
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    setIsFetchingLocation(true);
+    setCurrentLocation("Fetching current location...");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          console.log("Lat:", lat);
+          console.log("Lon:", lon);
+
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`
+          );
+
+          const data = await response.json();
+
+          console.log(data);
+
+          const a = data.address || {};
+
+          const locationText = [
+            a.road,
+            a.suburb || a.neighbourhood,
+            a.city || a.town || a.village,
+            a.state,
+          ]
+            .filter(Boolean)
+            .join(", ");
+
+          setLatitude(lat);
+          setLongitude(lon);
+          setCurrentLocation(
+            locationText || data.display_name || "Location unavailable"
+          );
+        } catch (error) {
+          console.error(error);
+          setLatitude(null);
+          setLongitude(null);
+          setCurrentLocation("Could not fetch address.");
+        }
+
+        setIsFetchingLocation(false);
+      },
+
+      (error) => {
+        console.error(error);
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setCurrentLocation("Location permission denied.");
+            break;
+
+          case error.TIMEOUT:
+            setCurrentLocation("Location request timed out.");
+            break;
+
+          default:
+            setCurrentLocation("Unable to fetch location.");
+        }
+
+        setLatitude(null);
+        setLongitude(null);
+        setIsFetchingLocation(false);
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    console.log({
-      issueTitle,
-      category,
-      description,
-      currentLocation,
-      roadName,
-      nearbyLandmark,
-      extraDirections,
-    });
+    try {
+      console.log("Submitting lat:", latitude);
+      console.log("Submitting lon:", longitude);
 
-    onClose();
+      const issue = await createIssue({
+        title: issueTitle,
+        description,
+        category,
+        anonymous,
+        address: currentLocation,
+        road: roadName,
+        landmark: nearbyLandmark,
+        latitude: latitude ?? 0,
+        longitude: longitude ?? 0,
+      });
+
+      console.log("Issue created:", issue);
+
+      setIssueTitle("");
+      setDescription("");
+      setCategory("");
+      setCurrentLocation("");
+      setRoadName("");
+      setNearbyLandmark("");
+      setExtraDirections("");
+      setLatitude(null);
+      setLongitude(null);
+      setAnonymous(false);
+
+      onClose();
+    } catch (error) {
+      console.error("Issue submit failed:", error);
+    }
   };
 
   return (
