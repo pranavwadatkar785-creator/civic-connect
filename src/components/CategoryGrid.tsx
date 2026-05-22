@@ -50,7 +50,13 @@ const categories: Category[] = [
   },
 ];
 
-export default function CategoryGrid() {
+interface CategoryGridProps {
+  onReportClick: () => void;
+}
+
+export default function CategoryGrid({
+  onReportClick,
+}: CategoryGridProps) {
   const [selectedCategory, setSelectedCategory] =
     useState("");
 

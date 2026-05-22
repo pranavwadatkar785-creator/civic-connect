@@ -5,8 +5,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import IssueMap from "./IssueMap";
+import Link from "next/link";
 
-export default function Hero() {
+interface HeroProps {
+  onReportClick: () => void;
+}
+
+export default function Hero({
+  onReportClick,
+}: HeroProps) {
   return (
     <section className="relative overflow-hidden bg-slate-50">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1fr_0.92fr] lg:gap-14 lg:px-8 lg:py-20">
@@ -27,22 +34,30 @@ export default function Hero() {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 active:scale-[0.98]"
-            >
-              <ClipboardList className="h-5 w-5" aria-hidden="true" />
-              Report Issue
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            
+              <button
+                type="button"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 active:scale-[0.98]"
+                //onClick={onReportClick}
+                onClick={() => {
+                console.log("REPORT CLICKED");
+                onReportClick();}}
+              >
+                <ClipboardList className="h-5 w-5" aria-hidden="true" />
+                Report Issue
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
+            
 
-            <button
-              type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-[#2563EB] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 active:scale-[0.98]"
-            >
-              <Search className="h-5 w-5" aria-hidden="true" />
-              Browse Issues
-            </button>
+            <Link href="/issues">
+              <button 
+                type="button"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-[#2563EB] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 active:scale-[0.98]"
+              >
+                <Search className="h-5 w-5" aria-hidden="true" />
+                Browse Issues
+              </button>
+            </Link>
           </div>
 
           <div className="mt-8 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
