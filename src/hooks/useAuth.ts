@@ -8,6 +8,8 @@ import {
   type SignUpInput,
 } from "@/services/auth";
 import { useAuthStore } from "@/store/authStore";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export function useAuth() {
   const user = useAuthStore((state) => state.user);
@@ -28,8 +30,39 @@ export function useAuth() {
 
   const logout = async () => {
     await logoutService();
-    clearUser();
+    //clearUser();
   };
+  useEffect(() => {
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange(
+    async (_event, session) => {
+      console.log(
+        "Auth changed:",
+        _event
+      );
+
+      if (!session) {
+        clearUser();
+        return;
+      }
+
+      // keep store synced
+      const currentUser =
+        useAuthStore.getState().user;
+
+      if (!currentUser) {
+        // session exists but store empty
+        // future: load profile here
+      }
+    }
+  );
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}, [clearUser]);
+  
 
   return {
     user,
