@@ -3,6 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ImagePlus, LocateFixed, Loader2, Send, X } from "lucide-react";
 import { createIssue } from "@/services/issues";
+import { useImageMetadata } from "@/hooks/useImageMetadata";
+import Image from "next/image";
+import { uploadIssueImage } from "@/services/storage";
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -24,6 +27,7 @@ const categories = [
 // TODO: mark report verified/suspicious
 
 export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [location, setLocation] = useState("");
   const [issueTitle, setIssueTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -36,6 +40,29 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [selectedImage,setSelectedImage]=useState<File|null>(null);
+  const [previewUrl,setPreviewUrl]=useState("");
+  const {metadata,extract}=useImageMetadata();
+
+
+  async function handleImageChange(
+e:React.ChangeEvent<HTMLInputElement>
+){
+
+const file=
+e.target.files?.[0];
+
+if(!file)return;
+
+setSelectedImage(file);
+
+setPreviewUrl(
+URL.createObjectURL(file)
+);
+
+await extract(file);
+
+}
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -45,6 +72,7 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
     };
   }, [isOpen]);
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported on this device");
@@ -204,17 +232,72 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
       console.log("Submitting lat:", latitude);
       console.log("Submitting lon:", longitude);
 
-      const issue = await createIssue({
-        title: issueTitle,
-        description,
-        category,
-        anonymous,
-        address: currentLocation,
-        road: roadName,
-        landmark: nearbyLandmark,
-        latitude: latitude ?? 0,
-        longitude: longitude ?? 0,
-      });
+      console.log({selectedImage,metadata});
+      let imageUrl = "";
+
+if (selectedImage) {
+  imageUrl = await uploadIssueImage(
+    selectedImage
+  );
+}
+
+console.log("imageUrl:", imageUrl);
+
+const issue = await createIssue({
+  title: issueTitle,
+  description,
+  category,
+  anonymous,
+
+  address: currentLocation,
+
+  road: roadName,
+
+  landmark: nearbyLandmark,
+
+  latitude: latitude ?? 0,
+
+  longitude: longitude ?? 0,
+
+  imageUrl,
+
+  imageLatitude:
+    metadata?.latitude,
+
+  imageLongitude:
+    metadata?.longitude,
+
+  verificationStatus:
+    metadata?.latitude &&
+    metadata?.longitude
+      ? "verified"
+      : "unverified",
+
+  confidenceScore:
+    metadata?.latitude &&
+    metadata?.longitude
+      ? 95
+      : 40,
+});
+
+if (selectedImage) {
+  imageUrl = await uploadIssueImage(
+    selectedImage
+  );
+}
+
+//console.log("imageUrl:", imageUrl);
+     // const issue = await createIssue({
+        //title: issueTitle,
+        //description,
+        //category,
+        //anonymous,
+        //address: currentLocation,
+        //road: roadName,
+        //landmark: nearbyLandmark,
+        //latitude: latitude ?? 0,
+        //longitude: longitude ?? 0,
+      //});
 
       console.log("Issue created:", issue);
 
@@ -315,18 +398,47 @@ export default function ReportModal({ isOpen, onClose }: ReportModalProps) {
             </div>
 
             <div>
-              <label className="mb-3 block text-base font-semibold text-slate-950 sm:text-lg">
-                Image upload
-              </label>
+  <label className="mb-3 block text-base font-semibold text-slate-950 sm:text-lg">
+    Image upload
+  </label>
 
-              <button
-                type="button"
-                className="flex w-full items-center justify-between rounded-2xl border border-dashed border-slate-300 px-5 py-4 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#2563EB]"
-              >
-                Add photo evidence
-                <ImagePlus />
-              </button>
-            </div>
+  <label
+    className="
+      flex w-full cursor-pointer flex-col rounded-2xl
+      border border-dashed border-slate-300
+      px-5 py-4 transition
+      hover:border-blue-200
+      hover:bg-blue-50
+    "
+  >
+    <input
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={handleImageChange}
+    />
+
+    {!previewUrl ? (
+      <div className="flex items-center justify-between text-slate-500 hover:text-[#2563EB]">
+        <span>Add photo evidence</span>
+        <ImagePlus />
+      </div>
+    ) : (
+      <Image
+  src={previewUrl}
+  alt="Issue preview"
+  width={800}
+  height={400}
+  className="
+    h-52
+    w-full
+    rounded-xl
+    object-cover
+  "
+/>
+    )}
+  </label>
+</div>
           </div>
 
           <div>
