@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 interface NavbarProps {
   activeTab?: string;
   setActiveTab?: (tab: string) => void;
+  onOpenReportModal?: () => void;
 }
 
 const navItems = [
@@ -18,13 +19,10 @@ const navItems = [
   { name: "About", href: "/about" },
 ];
 
-interface NavbarProps {
-  onOpenReportModal: () => void;
-}
 export default function Navbar({
   setActiveTab = () => {},
   activeTab = "home",
-  onOpenReportModal,
+  onOpenReportModal = () => {},
 }: NavbarProps) {
   
   
@@ -159,7 +157,7 @@ const handleLogout = async () => {
 
           <button
             type="button"
-            onClick={onOpenReportModal}
+            onClick={handleReportClick}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 active:scale-[0.98]"
           >
             <PlusCircle className="h-4 w-4" aria-hidden="true" />
@@ -223,7 +221,7 @@ const handleLogout = async () => {
 
             <button
               type="button"
-              onClick={onOpenReportModal}
+              onClick={handleReportClick}
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-5 py-3 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-all duration-200 hover:bg-blue-700 hover:shadow-md hover:shadow-blue-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 active:scale-[0.99]"
             >
               <PlusCircle className="h-4 w-4" aria-hidden="true" />

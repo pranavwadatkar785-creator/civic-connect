@@ -4,6 +4,12 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { AlertCircle, CheckCircle2, Landmark, Lock, Mail, UserRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import Captcha from "@/components/Captcha";
+
+interface CaptchaVerifyResponse {
+  success: boolean;
+  "error-codes"?: string[];
+}
 
 export default function SignUpPage() {
   const { signUp } = useAuth();
@@ -11,6 +17,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -19,9 +26,34 @@ export default function SignUpPage() {
     event.preventDefault();
     setError("");
     setMessage("");
-    setIsLoading(true);
+
+    if (!captchaToken) {
+      setError("Please complete CAPTCHA verification.");
+      return;
+    }
 
     try {
+      setIsLoading(true);
+
+      const captchaResponse = await fetch("/api/verify-captcha", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: captchaToken,
+        }),
+      });
+
+      const captchaResult =
+        (await captchaResponse.json()) as CaptchaVerifyResponse;
+
+      if (!captchaResponse.ok || !captchaResult.success) {
+        setCaptchaToken("");
+        setError("CAPTCHA verification failed. Please try again.");
+        return;
+      }
+
       await signUp({
         fullName,
         email,
@@ -34,18 +66,14 @@ export default function SignUpPage() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
-    } catch(error){
-
-console.log(
-"Signup Error:",
-error
-)
-
-setError(
-String(error)
-)
-
-} finally {
+      setCaptchaToken("");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to create account. Please try again."
+      );
+    } finally {
       setIsLoading(false);
     }
   };
@@ -174,13 +202,7 @@ String(error)
             </div>
 
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
-              {/* TODO: captcha */}
-              <p className="text-sm font-semibold text-slate-800">
-                CAPTCHA protection
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                Placeholder for future CAPTCHA validation.
-              </p>
+              <Captcha onVerify={setCaptchaToken} />
             </div>
 
             {error ? (

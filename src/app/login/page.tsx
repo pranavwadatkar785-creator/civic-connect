@@ -5,21 +5,53 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { AlertCircle, Landmark, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import Captcha from "@/components/Captcha";
+
+interface CaptchaVerifyResponse {
+  success: boolean;
+  "error-codes"?: string[];
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
-    setIsLoading(true);
+
+    if (!captchaToken) {
+      setError("Please complete CAPTCHA verification.");
+      return;
+    }
 
     try {
+      setIsLoading(true);
+
+      const captchaResponse = await fetch("/api/verify-captcha", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: captchaToken,
+        }),
+      });
+
+      const captchaResult =
+        (await captchaResponse.json()) as CaptchaVerifyResponse;
+
+      if (!captchaResponse.ok || !captchaResult.success) {
+        setCaptchaToken("");
+        setError("CAPTCHA verification failed. Please try again.");
+        return;
+      }
+
       await login({
         email,
         password,
@@ -108,13 +140,7 @@ export default function LoginPage() {
             </div>
 
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
-              {/* TODO: captcha */}
-              <p className="text-sm font-semibold text-slate-800">
-                CAPTCHA protection
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                Placeholder for future CAPTCHA validation.
-              </p>
+              <Captcha onVerify={setCaptchaToken} />
             </div>
 
             {error ? (
